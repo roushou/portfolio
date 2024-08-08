@@ -1,0 +1,58 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="author" content="Roushou" />
+    <meta name="description" content="Arcade theme portfolio" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="preload" href="/fonts/AnalogueOS.ttf" as="font" type="font/ttf" crossorigin />
+    <meta name="generator" content={Astro.generator} />
+    <meta property="og:title" content="Roushou" />
+    <meta property="og:description" content="Roushou Arcade Portfolio" />
+    <meta property="og:image" content="https://roushou.sh/assets/preview.png" />
+    <meta property="og:url" content="https://roushou.sh" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Roushou" />
+    <meta name="twitter:description" content="Roushou Arcade Portfolio" />
+    <meta name="twitter:image" content="https://roushou.sh/assets/preview.png" />
+    <meta name="twitter:url" content="https://roushou.sh" />
+		<title>{title}</title>
+  </head>
+	<body>
+		<slot />
+	</body>
+</html>
+<style is:global>
+  html {
+    font-family: "AnalogueOS", sans-serif;
+  }
+
+  body {
+    color: white;
+    background-color: black;
+    background-image: radial-gradient(#1a1a1a 1px, transparent 1px),
+      radial-gradient(#313131 1px, transparent 1px);
+    background-position: 0 0, 0 0;
+    background-size: 0.5em 0.5em;
+    background-repeat: repeat;
+  }
+
+  @font-face {
+    font-family: "AnalogueOS";
+    src: url("/fonts/AnalogueOS.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: fallback;
+  }
+</style>
