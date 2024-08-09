@@ -1,4 +1,4 @@
-# My portfolio
+# My personal website
 
 ## Getting started
 
