@@ -69,7 +69,7 @@ export const squares: SquareProps[] = [
     color: "indigo",
     intervalMilliseconds: 3750,
     coordinates: {
-      x: "left-[50%]",
+      x: "left-[45%]",
       y: "top-[27%]",
     },
   },
@@ -101,8 +101,8 @@ export const squares: SquareProps[] = [
     color: "purple",
     intervalMilliseconds: 5900,
     coordinates: {
-      x: "right-[35%]",
-      y: "top-[45%]",
+      x: "right-[33%]",
+      y: "top-[38%]",
     },
   },
   {
