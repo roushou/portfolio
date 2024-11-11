@@ -1,0 +1,162 @@
+---
+import MainLayout from "~/layouts/main.astro";
+
+type Item = {
+  name: string;
+  category?: string;
+  link: string;
+};
+
+const hardware: Item[] = [
+  {
+    name: "Keychron Q7 QMK - Red switches",
+    category: "Keyboard",
+    link: "https://www.keychron.com/products/keychron-q7-qmk-custom-mechanical-keyboard",
+  },
+  {
+    name: "Logitech Yeti",
+    category: "Microphone",
+    link: "https://www.logitechg.com/en-us/products/streaming-gear/yeti-premium-usb-microphone.988-000100.html",
+  },
+];
+
+const editor: Item[] = [
+  {
+    name: "Neovim",
+    link: "https://neovim.io",
+  },
+  {
+    name: "Catppuccin",
+    category: "Theme",
+    link: "https://github.com/catppuccin/catppuccin",
+  },
+  {
+    name: "JetBrains Mono",
+    category: "Font",
+    link: "https://fonts.google.com/specimen/JetBrains+Mono?query=jetbrains",
+  },
+];
+
+type TerminalItem = {
+  name: string;
+  description: string;
+  link: string;
+};
+
+const terminal: TerminalItem[] = [
+  {
+    name: "Wezterm",
+    description:
+      "A powerful cross-platform terminal emulator and multiplexer written in Rust",
+    link: "https://wezfurlong.org/wezterm/index.html",
+  },
+  {
+    name: "Fish",
+    description: "User-friendly command-line shell",
+    link: "https://fishshell.com",
+  },
+  {
+    name: "Zelli",
+    description: "Terminal multiplexer",
+    link: "https://zellij.dev",
+  },
+  {
+    name: "Starship",
+    description: "Cross-Shell prompt",
+    link: "https://starship.rs",
+  },
+  {
+    name: "Lazygit",
+    description: "TUI for git commands",
+    link: "https://github.com/jesseduffield/lazygit",
+  },
+  {
+    name: "fzf",
+    description: "Command-line fuzzy finder",
+    link: "https://github.com/junegunn/fzf",
+  },
+  {
+    name: "fd",
+    description: "Faster `find`",
+    link: "https://github.com/sharkdp/fd",
+  },
+  {
+    name: "Ripgrep",
+    description: "Search tool like `grep`",
+    link: "https://github.com/BurntSushi/ripgrep",
+  },
+  {
+    name: "Exa",
+    description: "Modern replacement for `ls`",
+    link: "https://the.exa.website",
+  },
+  {
+    name: "Bat",
+    description: "Better `cat`",
+    link: "https://github.com/sharkdp/bat",
+  },
+];
+---
+
+<MainLayout title="Roushou | Uses" withSocials>
+  <main class="px-10 pb-10 tracking-wider md:mt-10 md:px-32 lg:px-64">
+    <h1 class="mb-6 text-3xl">Uses</h1>
+    <div>
+      My dotfiles can be found <a
+        href="https://github.com/roushou/dotfiles"
+        class="underline decoration-orange-500 decoration-2 underline-offset-4 hover:text-orange-500"
+        >here</a
+      >.
+    </div>
+    <h2 class="my-4 text-xl text-orange-500"># Hardware</h2>
+    <ul class="mb-10 space-y-1">
+      {
+        hardware.map((item) => (
+          <li class="flex items-center space-x-2">
+            <div class="h-1 w-1 bg-white" />
+            <a href={item.link} class="group">
+              {item.category ? <span class="">{item.category}: </span> : null}
+              <span class="underline decoration-orange-500 decoration-2 underline-offset-4 group-hover:text-orange-500">
+                {item.name}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <h2 class="my-4 text-xl text-orange-500"># Editor</h2>
+    <ul class="mb-10 space-y-1">
+      {
+        editor.map((item) => (
+          <li class="flex items-center space-x-2">
+            <div class="h-1 w-1 bg-white" />
+            <a href={item.link} class="group">
+              {item.category ? <span class="">{item.category}: </span> : null}
+              <span class="underline decoration-orange-500 decoration-2 underline-offset-4 group-hover:text-orange-500">
+                {item.name}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <h2 class="mb-4 text-xl text-orange-500"># Terminal</h2>
+    <ul class="mb-10 space-y-1">
+      {
+        terminal.map((item) => (
+          <li class="flex items-center space-x-2">
+            <div class="h-1 w-1 bg-white" />
+            <a href={item.link} class="group">
+              <>
+                <span class="underline decoration-orange-500 decoration-2 underline-offset-4 group-hover:text-orange-500">
+                  {item.name}
+                </span>
+                <span>: {item.description}</span>
+              </>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </main>
+</MainLayout>

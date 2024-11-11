@@ -2,10 +2,10 @@
 import { Icon } from "astro-icon/components";
 import { Square } from "../components/square";
 import { squares } from "../data/squares";
-import BaseLayout from "../layouts/base.astro";
+import MainLayout from "../layouts/main.astro";
 ---
 
-<BaseLayout title="Roushou">
+<MainLayout title="Roushou">
   <div class="hidden md:block">
     {squares.map((config) => <Square client:load {...config} />)}
   </div>
@@ -52,4 +52,4 @@ import BaseLayout from "../layouts/base.astro";
       </li>
     </ul>
   </main>
-</BaseLayout>
+</MainLayout>
