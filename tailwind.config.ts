@@ -1,9 +1,14 @@
+import typographyPlugin from "@tailwindcss/typography";
 import type { Config } from "tailwindcss";
 
 export default {
-  content: ["./src/**/*.{astro,ts,tsx}"],
+  content: ["./src/**/*.{astro,ts,tsx, mdx}"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        nunito: ["Nunito", "sans-serif"],
+      },
+    },
   },
-  plugins: [],
+  plugins: [typographyPlugin],
 } satisfies Config;

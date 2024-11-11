@@ -39,6 +39,22 @@ const { pathname } = Astro.url;
       </li>
       <li>
         <a
+          href="/posts"
+          rel="prefetch"
+          class:list={[
+            "flex items-center space-x-2 bg-gray-900 px-4 py-1.5 border",
+            "2xl:text-lg",
+            "hover:text-indigo-500 hover:border-indigo-500",
+            { "border-transparent": !pathname.startsWith("/posts") },
+            { "text-indigo-500 border-indigo-500": pathname.startsWith("/posts") },
+          ]}
+        >
+          <span class="h-2 w-2 bg-indigo-500"></span>
+          <span>Posts</span>
+        </a>
+      </li>
+      <li>
+        <a
           href="/uses"
           rel="prefetch"
           class:list={[
@@ -71,6 +87,13 @@ const { pathname } = Astro.url;
         <li>
           <a href="/" class="flex h-16 items-center justify-center space-x-4">
             <span class:list={["text-2xl", { "text-amber-500": pathname === "/" }]}>Home</span>
+          </a>
+        </li>
+        <li>
+          <a href="/posts" class="flex h-16 items-center justify-center space-x-4">
+            <span class:list={["text-2xl", { "text-indigo-500": pathname.startsWith("/posts") }]}
+              >Posts</span
+            >
           </a>
         </li>
         <li>

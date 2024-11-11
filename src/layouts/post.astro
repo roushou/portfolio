@@ -1,0 +1,61 @@
+---
+import type { MarkdownLayoutProps } from "astro";
+import Toc from "~/components/toc.astro";
+import BaseLayout from "./base.astro";
+
+type Props = MarkdownLayoutProps<{
+  title: string;
+  description: string;
+  date: string;
+}>;
+
+const { frontmatter, headings } = Astro.props;
+---
+
+<BaseLayout title={`Roushou | ${frontmatter.title}`}>
+  <main class="px-0 pb-24 font-nunito md:flex md:justify-center">
+    <nav
+      class="prose prose-invert left-0 hidden flex-col justify-between pb-24 pt-3 md:fixed md:px-6 lg:flex lg:px-24 xl:px-48 2xl:px-96"
+    >
+      <a
+        href="/posts"
+        class="mt-8 flex items-center space-x-2 text-gray-300 no-underline hover:text-indigo-500"
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 15 15"
+          fill="currentColor"
+          xmlns="http://www.w3.org/2000/svg"
+          ><path
+            d="M6.85355 3.14645C7.04882 3.34171 7.04882 3.65829 6.85355 3.85355L3.70711 7H12.5C12.7761 7 13 7.22386 13 7.5C13 7.77614 12.7761 8 12.5 8H3.70711L6.85355 11.1464C7.04882 11.3417 7.04882 11.6583 6.85355 11.8536C6.65829 12.0488 6.34171 12.0488 6.14645 11.8536L2.14645 7.85355C1.95118 7.65829 1.95118 7.34171 2.14645 7.14645L6.14645 3.14645C6.34171 2.95118 6.65829 2.95118 6.85355 3.14645Z"
+            fill="currentColor"
+            fill-rule="evenodd"
+            clip-rule="evenodd"></path></svg
+        >
+        <span>Posts</span>
+      </a>
+    </nav>
+    <article class="prose-lg prose-invert md:prose md:prose-invert">
+      <header class="mb-6 space-y-4 pt-12">
+        <time datetime={new Date(frontmatter.date).toISOString()} class="text-neutral-400">
+          {
+            new Date(frontmatter.date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          }
+        </time>
+        <h1 class="font-lora text-6xl">{frontmatter.title}</h1>
+        <p class="text-xl">{frontmatter.description}</p>
+      </header>
+      <slot />
+    </article>
+  </main>
+  <Toc
+    headings={headings}
+    depth={3}
+    class="right-32 top-10 hidden md:fixed xl:inline 2xl:right-64"
+  />
+</BaseLayout>

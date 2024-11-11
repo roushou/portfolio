@@ -1,0 +1,496 @@
+---
+layout: ../../layouts/post.astro
+title: "Mined"
+description: "An overengineered Minecraft infrastructure"
+author: Roushou
+date: 2023-10-18
+draft: false
+tags:
+  - Golang
+  - Pulumi
+  - GCP
+---
+
+Minecraft is one of those games I played hundreds of hours during highschool and college. Building my own base to protect myself from zombies, mining hours to find enough diamonds to craft equipment that I end up losing after falling in lava, going on expedition in other dimensions, and fighting the Ender dragon, are things I had a lot of fun to do.
+
+Surely, lots of memories of those nights with friends on [Mumble](https://www.mumble.info) playing on a Minecraft server powered by [Hamachi](https://vpn.net) often arise, even 10 years later.
+
+As I was looking to learn about infrastructure I was wondering what it would take to run my own multiplayer Minecraft server today. I already did it years ago so I could wrap it up in a week-end, isn't it? A classic I sometimes tell myself. In a sense it is true but expectations have evolved making me want to build something more advanced. And curiosity often leads to new paths.
+
+## Foundations
+
+A Minecraft server is no different than most systems we use everyday. It's simply a server running on a `port` (by default 25565) accepting TCP connections and that can be exposed so people can connect to it to join your world.
+
+![basic](/assets/images/mined/basic.png)
+
+There are multiple implementations available, the [official](https://www.minecraft.net/en-us/download/server) one if you want to make sure to always have the latest updates. Or others like [Paper](https://papermc.io/software/paper), [Purpur](https://purpurmc.org) or [Fabric](https://fabricmc.net) that are more focused on performance and modding, but often fall a few versions behind the official one.
+
+If you have played Minecraft, you may have noticed that the world generation sometimes takes too much time with freezes left and right while not even doing incredible things. Those blocks are actually not as light as we may think and quickly become heavy as they are generated around you (and other people!).
+
+I often find myself using the following specs for an enjoyable experience with 3-5 people on a modded server. You may consider lower specs for a vanilla server.
+
+| Specs       | CPU     | RAM  | Storage |
+| ----------- | ------- | ---- | ------- |
+| Minimum     | 1 core  | 4 GB | 4 GB    |
+| Recommended | 2 cores | 8 GB | 4 GB    |
+
+Regarding bandwidth, I always had powerful enough networks to not experience any issues. That's why you don't see it above.
+
+## It works on my machine
+
+The easiest way to have a multiplayer server (and for free) is to turn your own machine into a Minecraft server. Simply download a server implementation like [Paper](https://papermc.io/software/paper), run it, configure your firewall to allow tcp connections on port **25565**, forward it and share your IP address with friends. You can now be Christophe Colomb and discover the world together!
+
+But before setting sails, it's good to know it comes with some drawbacks. Your IP address is probably dynamic so keeping track of it or configuring your router to make it static may be required. Your internet connection should be strong enough to support everyone or your friends will not like you. Exposing yourself to the world comes with great responsibility so make sure to configure things correctly. And one image to sum up the most annoying one.
+
+![it's a server](/assets/images/mined/its-a-server.png)
+
+One tool I find very convenient to expose anything running locally is [ngrok](https://ngrok.com). One simple command and your server is available to join from anywhere without the need to configure your firewall and port forwarding.
+
+```sh
+$ ngrok tcp 25565
+```
+
+Then share the generated URL with your friends and you're good to go. As cool as it is, it still requires you to have your computer always running.
+
+## The Cloud
+
+One could argue that running your server in a Raspberry Pi is a good alternative but given how demanding Minecraft can be, it could be a lot of hassle to maintain. Fully managed platforms like [Pufferfish](https://pufferfish.host), [Bisect](https://www.bisecthosting.com) or [Aternos](https://aternos.org) are also good choices if your objective is to quickly explore the Nether.
+
+But here we'll go the hard (and fun!) way of creating our own platform.
+
+Hosting your server in a virtual machine running in the Cloud makes it globally available and your friends can finally stop pinging you to start the server. We are going to use [Google Cloud](https://cloud.google.com) as our Cloud provider. If you are wondering why, this is simply because I had $300 credits with them about to expire. Other providers like AWS, Azure, Digital Ocean, etc. are also good alternatives.
+
+Here's an overview of what looks like the platform.
+
+![overview](/assets/images/mined/overview.png)
+
+It's recommended to use [gcloud](https://cloud.google.com/sdk/docs) to interact with GCP. Binaries and installation methods are available [here](https://cloud.google.com/sdk/docs/install). Then follow the instructions from below commands to configure it.
+
+```sh
+$ gcloud init
+```
+
+Then setup authorization.
+
+```sh
+$ gcloud config set project <YOUR_GCP_PROJECT_ID>
+$ gcloud auth application-default login
+```
+
+### Infrastructure
+
+Managing infrastructure can be done manually or using code. When discovering the platform, doing things manually is a great way to learn its internals and it's also nice to have a GUI to help visualize all the services available. The other choice is more abstract and requires some prior experience with the platform to understand what's happening. But it has the advantages of being versioned and reproducible. Here, we will go with the second option.
+
+There are several choices when talking about Infrastructure as Code (IaC) like [Terraform](https://www.terraform.io) which is the most popular, and [Pulumi](https://www.pulumi.com) which is newer but comes with the great benefits of using popular programming languages like TypeScript, Go, Python and more at the forefront of its usage, compared to the former which requires to learn its own DSL.
+
+Installation methods are available [here](https://www.pulumi.com/docs/install) to install Pulumi. Or using Homebrew.
+
+```sh
+$ brew install pulumi/tap/pulumi
+```
+
+Then create a new Pulumi project configured to create a virtual machine on GCP.
+
+```sh
+$ pulumi new vm-gcp-go
+```
+
+On GCP, a machine type close to our needs is `e2-standard-2`. It provides 2 vCPUs and 8 GB of RAM. Make sure to choose a region close enough.
+
+Once done, you should end up with something similar to the following. This is how our infrastructure is currently configured. It is reflected on Pulumi and can be updated using `pulumi up` and deployed using `pulumi deploy`.
+
+(Dang, I like Go's error handling but it's always so verbose)
+
+```go
+pulumi.Run(func(ctx *pulumi.Context) error {
+  // Import the program's configuration settings.
+  cfg := config.New(ctx, "")
+  machineType, err := cfg.Try("machineType")
+  if err != nil {
+    machineType = "f1-micro"
+  }
+
+  osImage, err := cfg.Try("osImage")
+  if err != nil {
+    osImage = "debian-11"
+  }
+
+  instanceTag, err := cfg.Try("instanceTag")
+  if err != nil {
+    instanceTag = "webserver"
+  }
+
+  servicePort, err := cfg.Try("servicePort")
+  if err != nil {
+    servicePort = "80"
+  }
+
+  // Create a new network for the virtual machine.
+  network, err := compute.NewNetwork(ctx, "network", &compute.NetworkArgs{
+    AutoCreateSubnetworks: pulumi.Bool(false),
+  })
+  if err != nil {
+    return err
+  }
+
+  // Create a subnet on the network.
+  subnet, err := compute.NewSubnetwork(ctx, "subnet", &compute.SubnetworkArgs{
+    IpCidrRange: pulumi.String("10.0.1.0/24"),
+    Network:     network.ID(),
+  })
+  if err != nil {
+    return err
+  }
+
+  // Create a firewall allowing inbound access over ports 80 (for HTTP) and 22 (for SSH).
+  firewall, err := compute.NewFirewall(ctx, "firewall", &compute.FirewallArgs{
+    Network: network.SelfLink,
+    Allows: compute.FirewallAllowArray{
+      compute.FirewallAllowArgs{
+        Protocol: pulumi.String("tcp"),
+        Ports: pulumi.ToStringArray([]string{
+          "22",
+          servicePort,
+        }),
+      },
+    },
+    Direction: pulumi.String("INGRESS"),
+    SourceRanges: pulumi.ToStringArray([]string{
+      "0.0.0.0/0",
+    }),
+    TargetTags: pulumi.ToStringArray([]string{
+      instanceTag,
+    }),
+  })
+  if err != nil {
+    return err
+  }
+
+  // Define a script to be run when the VM starts up.
+  metadataStartupScript := fmt.Sprintf(`#!/bin/bash
+    echo '<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>Hello, world!</title>
+    </head>
+    <body>
+      <h1>Hello, world! 👋</h1>
+      <p>Deployed with 💜 by <a href="https://pulumi.com/">Pulumi</a>.</p>
+    </body>
+    </html>' > index.html
+    sudo python3 -m http.server %s &`, servicePort)
+
+  // Create the virtual machine.
+  instance, err := compute.NewInstance(ctx, "instance", &compute.InstanceArgs{
+    MachineType: pulumi.String(machineType),
+    BootDisk: compute.InstanceBootDiskArgs{
+      InitializeParams: compute.InstanceBootDiskInitializeParamsArgs{
+        Image: pulumi.String(osImage),
+      },
+    },
+    NetworkInterfaces: compute.InstanceNetworkInterfaceArray{
+      compute.InstanceNetworkInterfaceArgs{
+        Network:    network.ID(),
+        Subnetwork: subnet.ID(),
+        AccessConfigs: compute.InstanceNetworkInterfaceAccessConfigArray{
+          compute.InstanceNetworkInterfaceAccessConfigArgs{
+            // NatIp:       nil,
+            // NetworkTier: nil,
+          },
+        },
+      },
+    },
+    ServiceAccount: compute.InstanceServiceAccountArgs{
+      Scopes: pulumi.ToStringArray([]string{
+        "https://www.googleapis.com/auth/cloud-platform",
+      }),
+    },
+    AllowStoppingForUpdate: pulumi.Bool(true),
+    MetadataStartupScript:  pulumi.String(metadataStartupScript),
+    Tags: pulumi.ToStringArray([]string{
+      instanceTag,
+    }),
+  }, pulumi.DependsOn([]pulumi.Resource{firewall}))
+  if err != nil {
+    return err
+  }
+
+  instanceIp := instance.NetworkInterfaces.Index(pulumi.Int(0)).AccessConfigs().Index(pulumi.Int(0)).NatIp()
+
+  // Export the instance's name, public IP address, and HTTP URL.
+  ctx.Export("name", instance.Name)
+  ctx.Export("ip", instanceIp)
+  ctx.Export("url", pulumi.Sprintf("http://%s:%s", instanceIp.Elem(), servicePort))
+  return nil
+})
+```
+
+### Virtual Machine
+
+At this point, we have a bare virtual machine that spins up a Python HTTP server on port `80` returning a simple HTML page. A subnet and firewall are also setup to control allowed traffics. This is part of the below component of our platform.
+
+![vm step](/assets/images/mined/vm-step.png)
+
+Notice that the server is a gRPC server, not HTTP. Both should do the job, I just heard a lot about gRPC but I didn't have yet the opportunity to play with it so I decided to give it a shot.
+
+The `metadataStartupScript` variable is the script that will be executed when the virtual machine starts. It's a good fit to setup the Minecraft server and systemd service.
+
+You may not like it but this is what peak software engineering looks like lol.
+
+```go
+rootDir := "/path/to/minecraft"
+
+metadataStartupScript := fmt.Sprintf(`#!/bin/bash
+  mkdir -p %s/server
+
+  curl -o %s/server/server.jar https://api.papermc.io/v2/projects/paper/versions/1.20.2/builds/217/downloads/paper-1.20.2-217.jar
+
+  echo 'eula=true' > %s/server/eula.txt
+
+  echo '#!/bin/bash
+  java -Xmx1024M -Xms1024M -jar server.jar' > %s/server/run.sh
+
+  sudo chmod +x %s/server/run.sh
+
+  echo '[Unit]
+  Description=Minecraft Server
+  After=network.target
+
+  [Service]
+  WorkingDirectory=%s/server
+  ExecStart=run.sh
+  Restart=on-failure
+  User=minecraft
+  Group=minecraft
+  TimeoutStartSec=120
+  TimeoutStopSec=60
+
+  [Install]
+  WantedBy=multi-user.target
+  ' > /etc/systemd/system/minecraft.service`, rootDir, rootDir, rootDir, rootDir, rootDir, rootDir)
+```
+
+The above instructs the VM to download the latest Paper server and create a systemd service to start it. We are going to setup the gRPC server later on.
+
+### Cloudrun
+
+This part is about creating a Cloudrun service which will act as a proxy to our virtual machine. It will be responsible for receiving requests from the UI and talk to the virtual machine.
+
+![cloudrun step](/assets/images/mined/cloudrun-step.png)
+
+An HTTP server is commonly used for this type of service. For example, using [chi](https://github.com/go-chi/chi) this is how a handler to start the virtual machine would be defined.
+
+```go
+type startVMResponse struct {
+	Message string `json:"message"`
+}
+
+func (api *vmApi) start(w http.ResponseWriter, r *http.Request) {
+	project := chi.URLParam(r, "project")
+	name := chi.URLParam(r, "name")
+	zone := r.URL.Query().Get("zone")
+
+	client, err := compute.NewInstancesRESTClient(api.Context)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer client.Close()
+
+	req := &computepb.StartInstanceRequest{
+		Project:  project,
+		Instance: name,
+		Zone:     zone,
+	}
+	_, err = client.Start(api.Context, req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	res := &startVMResponse{
+		Message: "success",
+	}
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+```
+
+Similarly, a handler to stop the virtual machine would be pretty much the same except that it would... stop, and not start the virtual machine (thanks captain obvious).
+
+```go
+_, err = client.Stop(api.Context, req)
+```
+
+Note that I'm talking about starting and stopping the virtual machine, and not the minecraft server inside it. This will be the job of the systemd service created earlier.
+
+### Protocol Buffers
+
+Protocol Buffers (a.k.a protobufs) are a way to efficiently serialize structured data for communication between different systems. Like JSON but smaller and faster. The very cool thing is that it's language-neutral, it serves as a language definition between services from which code is generated in the language needed.
+
+An interface that defines how a client and server should communicate between each other in order to start a minecraft server would look like this.
+
+```proto
+syntax = "proto3";
+
+option go_package = "<your-package>";
+
+package vm;
+
+service MinecraftService {
+  rpc Start (StartRequest) returns (StartResponse) {}
+}
+
+message StartRequest {}
+message StartResponse {
+  string message = 1;
+}
+```
+
+Code can be generated in the languages needed using [protoc](https://grpc.io/docs/protoc-installation). For example, to generate Go code.
+
+```sh
+$ protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative path/to/proto/file
+```
+
+Then the server and client can be implemented.
+
+Here's what the server would look like.
+
+```go
+package vm
+
+import (
+	"context"
+	"net"
+
+	"github.com/coreos/go-systemd/dbus"
+	pb "github.com/roushou/mined/vm/proto"
+	"google.golang.org/grpc"
+)
+
+type MinecraftService struct {
+	pb.UnsafeMinecraftServiceServer
+	dbus *dbus.Conn
+}
+
+func NewMinecraftService(ctx context.Context) (*MinecraftService, error) {
+	dbus, err := dbus.NewWithContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &MinecraftService{dbus: dbus}, nil
+}
+
+func (s *MinecraftService) Start(ctx context.Context, req *pb.StartRequest) (*pb.StartResponse, error) {
+	_, err := s.dbus.StartUnitContext(ctx, "minecraft.service", "replace", nil)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.StartResponse{Message: "success"}, nil
+}
+
+type MinecraftServiceServer struct {
+	port    string
+	server  *grpc.Server
+	service *MinecraftService
+}
+
+func NewMinecraftServiceServer(port string) (*MinecraftServiceServer, error) {
+	ctx := context.Background()
+	service, err := NewMinecraftService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	server := &MinecraftServiceServer{
+		server:  grpc.NewServer(),
+		port:    port,
+		service: service,
+	}
+	return server, nil
+}
+
+func (s *MinecraftServiceServer) Launch() error {
+	listener, err := net.Listen("tcp", ":"+s.port)
+	if err != nil {
+		return err
+	}
+
+	pb.RegisterMinecraftServiceServer(s.server, s.service)
+
+	if err := s.server.Serve(listener); err != nil {
+		return err
+	}
+
+	return nil
+}
+```
+
+And the client which will be used in the HTTP server.
+
+```go
+package vm
+
+import (
+	pb "github.com/roushou/mined/vm/proto"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+type MinecraftClient struct {
+	Service    pb.MinecraftServiceClient
+	connection *grpc.ClientConn
+}
+
+func NewMinecraftClient(addr string) (*MinecraftClient, error) {
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	mc := &MinecraftClient{
+		Service:    pb.NewMinecraftServiceClient(conn),
+		connection: conn,
+	}
+	return mc, err
+}
+
+func (c *MinecraftClient) Close() error {
+	return c.connection.Close()
+}
+```
+
+And a handler that uses the client.
+
+```go
+type StartResponse struct {
+	Message string
+}
+
+func (api *minecraftApi) start(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(api.Context, time.Second)
+	defer cancel()
+
+	result, err := api.Client.Service.Start(ctx, &proto.StartRequest{})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	log.Println("result", result)
+
+	res := &StartResponse{Message: "success"}
+
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+```
+
+## Wrap up
+
+From there, we have all the building blocks to create our platform. A Minecraft server running inside a virtual machine which both can be started and stopped. An HTTP server between users and the virtual machine. And a communication between services using gRPC.
+
+Those are only a small set of checkpoints on the map. There are still a lot to explore like containerizing services, registering a domain for static IP addresses, regular world backups to prevent disasters, scale-to-zero resources when nobody is using them, setup monitoring and alerting, a nice user interface with proper log and event streaming, and so much more.
+
+While being far, it's not impossible to see a platform where Minecraft servers can be created on-demand with mods and users management in only a few clicks and deployable to a chosen Cloud provider.
