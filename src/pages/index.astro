@@ -5,17 +5,17 @@ import { squares } from "../data/squares";
 import MainLayout from "../layouts/main.astro";
 ---
 
-<MainLayout title="Roushou">
+<MainLayout title="Kenji">
   <div class="hidden md:block">
     {squares.map((config) => <Square client:load {...config} />)}
   </div>
   <main
     class="mt-6 px-6 tracking-wider md:mt-12 md:max-w-7xl md:px-24 md:pt-28 lg:px-56 2xl:max-w-screen-2xl 2xl:px-80 2xl:pt-48"
   >
-    <h1 class="text-8xl text-amber-500 md:text-8xl md:leading-none">Roushou</h1>
+    <h1 class="text-8xl text-amber-500 md:text-8xl md:leading-none">Kenji</h1>
     <h2 class="text-3xl md:text-5xl">Software Engineer</h2>
     <p class="text-xl mt-4">
-      I'm Roushou, a software engineer nomading in South East Asia.
+      I'm Kenji, a software engineer nomading in South East Asia.
     </p>
     <p class="text-xl mt-4">
       Lifelong learner I'm often hacking around and learning new things.
@@ -46,7 +46,7 @@ import MainLayout from "../layouts/main.astro";
         </a>
       </li>
       <li class="border-b-2 border-b-transparent pb-1 duration-200 hover:border-b-amber-500">
-        <a href="mailto:hello@roushou.sh" target="_blank" rel="noopener noreferrer">
+        <a href="mailto:hello@kenji.sh" target="_blank" rel="noopener noreferrer">
           <Icon name="envelope" class="size-6" />
         </a>
       </li>
