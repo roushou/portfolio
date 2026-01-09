@@ -1,4 +1,5 @@
 ---
+import { socialLinks } from "../config";
 import TopBar from "../components/topbar.astro";
 import BaseLayout from "./base.astro";
 
@@ -21,7 +22,7 @@ const props = Astro.props;
       >
         <ul class="mb-4 flex md:space-x-6">
           <li>
-            <a href="mailto:hello@kenji.sh" target="_blank" rel="noopener noreferrer">
+            <a href={`mailto:${socialLinks.email}`} target="_blank" rel="noopener noreferrer">
               <svg
                 width="20"
                 height="20"
@@ -40,7 +41,7 @@ const props = Astro.props;
             </a>
           </li>
           <li>
-            <a href="https://github.com/roushou" target="_blank" rel="noopener noreferrer">
+            <a href={socialLinks.github} target="_blank" rel="noopener noreferrer">
               <svg
                 width="20"
                 height="20"
@@ -59,7 +60,7 @@ const props = Astro.props;
             </a>
           </li>
           <li>
-            <a href="https://x.com/kenjilau_" target="_blank" rel="noopener noreferrer">
+            <a href={socialLinks.x} target="_blank" rel="noopener noreferrer">
               <svg
                 width="20"
                 height="20"
