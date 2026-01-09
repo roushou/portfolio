@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, onCleanup } from "solid-js";
 
 type SquareColor =
   | "red"
@@ -34,9 +34,11 @@ export type SquareProps = {
 export function Square(props: SquareProps) {
   const [color, setColor] = createSignal<VisibleColor>("transparent");
 
-  setInterval(() => {
+  const intervalId = setInterval(() => {
     setColor((prev) => (prev === "transparent" ? props.color : "transparent"));
   }, props.intervalMilliseconds);
+
+  onCleanup(() => clearInterval(intervalId));
 
   return (
     <div
